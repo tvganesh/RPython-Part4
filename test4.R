@@ -7,7 +7,7 @@ library(ggplot2)
 
 cancer <- read.csv("cancer.csv")
 names(cancer) <- c(seq(1,30),"output")
-
+cancer$output <- as.factor(cancer$output)
 
 ####################################
 #2 Plain SVM
@@ -51,3 +51,48 @@ df <- melt(b,id="C1")
 ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
     xlab("C (SVC regularization)value") + ylab("Accuracy") +
     ggtitle("Training and test accuracy vs C(regularization)")
+
+
+##################################################################################
+library(dplyr)
+cancer <- read.csv("cancer.csv")
+names(cancer) <- c(seq(1,30),"output")
+cancer$output <- as.factor(cancer$output)
+
+
+set.seed(6)
+# Set max number of features
+
+
+# Loop through each features
+
+    # Set no of folds
+    noFolds=5
+    # Create the rows which fall into different folds from 1..noFolds
+    folds = sample(1:noFolds, nrow(cancer), replace=TRUE) 
+    accuracy<-0
+    # Loop through the folds
+    for(j in 1:noFolds){
+        # The training is all rows for which the row is != j (k-1 folds -> training)
+        train <- cancer[folds!=j,]
+        # The rows which have j as the index become the test set
+        test <- cancer[folds==j,]
+        # Create a SVM model for this
+        svmfit=svm(output~., data=train, kernel="radial",cost=10,scale=TRUE)
+
+        ypred=predict(svmfit,test)
+        a <-confusionMatrix(ypred,test$output)
+        testAccuracy <-a$overall[1]
+        # Add all the Cross Validation errors
+        accuracy=accuracy+testAccuracy
+    }
+    # Compute the average of MSE for K folds for number of features 'i'
+    accuracy=accuracy/noFolds
+
+a <- seq(1,13)
+d <- as.data.frame(t(rbind(a,cvError)))
+names(d) <- c("Features","CVError")
+#Plot the CV Error vs No of Features
+ggplot(d,aes(x=Features,y=CVError),color="blue") + geom_point() + geom_line(color="blue") +
+    xlab("No of features") + ylab("Cross Validation Error") +
+    ggtitle("Forward Selection - Cross Valdation Error vs No of Features")
