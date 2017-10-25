@@ -6,6 +6,8 @@ library(e1071)
 library(caret)
 library(reshape2)
 library(ggplot2)
+library(rpart)
+library(rpart.plot)
 
 cancer <- read.csv("cancer.csv")
 names(cancer) <- c(seq(1,30),"output")
@@ -137,3 +139,9 @@ seqLogSpace <- function(start,stop,len){
     a=seq(log10(10^start),log10(10^stop),length=len)
     10^a
 }
+
+
+
+rpart = NULL
+m <-rpart(Species~.,data=iris)
+rpart.plot(m,extra=2,main="Decision Tree - IRIS")
