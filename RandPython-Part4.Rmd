@@ -292,3 +292,63 @@ plt.fill_between(param_range, test_scores_mean - test_scores_std,
 
 ```
 
+## SVM Curve Python - Preventing data leakage
+```{python}
+from sklearn.cross_validation import  KFold
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.svm import SVC
+
+(X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
+param_range = np.logspace(-3, 2, 20)
+folds=5
+overallTrainAccuracy=[]
+overallTestAccuracy=[]
+for c in  param_range:
+    trainingAccuracy=0
+    testAccuracy=0
+    kf = KFold(len(X_cancer),n_folds=folds)
+    for train_index, test_index in kf:
+            # Partition the data acccording the fold indices generated
+            X_train, X_test = X_cancer[train_index], X_cancer[test_index]
+            y_train, y_test = y_cancer[train_index], y_cancer[test_index]  
+
+            
+            # Scale the X_train and X_test 
+            scaler = MinMaxScaler()
+            X_train_scaled = scaler.fit_transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+            
+            clf = SVC(C=c).fit(X_train_scaled, y_train)
+            acctrain=clf.score(X_train_scaled, y_train)
+            accTest=clf.score(X_test_scaled, y_test)
+            trainingAccuracy += np.sum(acctrain)
+            testAccuracy += np.sum(accTest)
+    overallTrainAccuracy.append(trainingAccuracy/folds)
+    overallTestAccuracy.append(testAccuracy/folds)
+        
+print(overallTrainAccuracy)
+print(overallTestAccuracy)
+    
+overallTrainAccuracy=pd.DataFrame(overallTrainAccuracy,index=param_range)
+overallTestAccuracy=pd.DataFrame(overallTestAccuracy,index=param_range)
+
+# Plot training and test R squared as a function of alpha
+df=pd.concat([overallTrainAccuracy,overallTestAccuracy],axis=1)
+df.columns=['trainingAccuracy','testAccuracy']
+
+
+plt.title('Validation Curve with SVM')
+plt.xlabel('$\gamma$ (gamma)')
+plt.ylabel('Score')
+plt.ylim(0.5, 1.1)
+lw = 2
+
+plt.semilogx(param_range, overallTrainAccuracy, label='Training score',
+            color='darkorange', lw=lw)
+
+
+plt.semilogx(param_range, overallTestAccuracy, label='Cross-validation score',
+            color='navy', lw=lw)
+
+plt.legend(loc='best')
+```
