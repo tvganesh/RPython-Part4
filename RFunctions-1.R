@@ -1,6 +1,6 @@
 library(dplyr)
 library(ggplot2)
-library(FNN)
+
 # Split the data into training and test sets
 trainTestSplit <- function(df,trainPercent,seed1){
     ## Sample size percent
