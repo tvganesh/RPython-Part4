@@ -72,7 +72,7 @@ param_range = seqLogSpace(-3,2,20)
 overallTrainAccuracy <- NULL
 overallTestAccuracy <- NULL
 
-# Loop over the parameter range of C1
+# Loop over the parameter range of Gamma
 for(i in param_range){
     # Set no of folds
     noFolds=5
@@ -89,7 +89,7 @@ for(i in param_range){
         # The rows which have j as the index become the test set
         test <- cancer[folds==j,]
         # Create a SVM model for this
-        svmfit=svm(output~., data=train, kernel="radial",cost=i,scale=TRUE)
+        svmfit=svm(output~., data=train, kernel="radial",gamma=i,scale=TRUE)
   
         # Add up all the fold accuracy for training and test separately  
         ypredTrain <-predict(svmfit,train)
@@ -114,9 +114,9 @@ for(i in param_range){
     names(b) <- c("C1","trainingAccuracy","testAccuracy")
     df <- melt(b,id="C1")
     #Plot in log axis
-    ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
-      xlab("C (SVC regularization)value") + ylab("Accuracy") +
-      ggtitle("Training and test accuracy vs C(regularization)") + scale_x_log10()
+  #  ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
+    #  xlab("C (SVC regularization)value") + ylab("Accuracy") +
+   #   ggtitle("Training and test accuracy vs C(regularization)") + scale_x_log10()
 }
 
 
