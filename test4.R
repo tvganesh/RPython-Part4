@@ -59,13 +59,9 @@ seqLogSpace <- function(start,stop,len){
   a=seq(log10(10^start),log10(10^stop),length=len)
   10^a
 }
-
-
-
 cancer <- read.csv("cancer.csv")
 names(cancer) <- c(seq(1,30),"output")
 cancer$output <- as.factor(cancer$output)
-
 
 set.seed(6)
 

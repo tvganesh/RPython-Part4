@@ -55,8 +55,13 @@ print('Accuracy of Linear SVC classifier on test set: {:.2f}'
      .format(clf.score(X_test, y_test)))
 ```
 
-##1.2a - Radial SVM - R 
+##1.2a - Radial SVM (nnormlaized) - R 
 ```{r}
+library(dplyr)
+library(e1071)
+library(caret)
+library(reshape2)
+library(ggplot2)
 
 # Radial SVM unnormalized
 train_idx <- trainTestSplit(cancer,trainPercent=75,seed=5)
@@ -67,7 +72,7 @@ svmfit=svm(output~., data=train, kernel="radial",cost=10,scale=FALSE)
 ypred=predict(svmfit,test)
 confusionMatrix(ypred,test$output)
 ```
-
+Python - unnormlaized
 ```{python}
 import numpy as np
 import pandas as pd
@@ -90,7 +95,7 @@ print('Accuracy of RBF-kernel SVC on training set: {:.2f}'
 print('Accuracy of RBF-kernel SVC on test set: {:.2f}'
      .format(clf.score(X_test, y_test)))
 ```
-
+##1.2a - Radial SVM -R Normalized
 
 
 ```{r}
@@ -119,7 +124,7 @@ ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
     ggtitle("Training and test accuracy vs C(regularization)")
 ```
 
-##1.2a - Radial SVM - Python
+##1.2a - Radial SVM (normalized) - Python
 
 ```{python}
 import numpy as np
@@ -161,5 +166,129 @@ df.columns=['trainingAccuracy','trainingAccuracy']
 fig5=df.plot()
 fig5=plt.title('Training and test accuracy vs C (SVC)')
 plt.show()
+```
+
+# Validation curve - R
+```{r}
+seqLogSpace <- function(start,stop,len){
+  a=seq(log10(10^start),log10(10^stop),length=len)
+  10^a
+}
+cancer <- read.csv("cancer.csv")
+names(cancer) <- c(seq(1,30),"output")
+cancer$output <- as.factor(cancer$output)
+
+set.seed(6)
+
+
+# Create the range of C1 in log space
+param_range = seqLogSpace(-3,2,20)
+# Initialize the overall training and test accuracy to NULL
+overallTrainAccuracy <- NULL
+overallTestAccuracy <- NULL
+
+# Loop over the parameter range of C1
+for(i in param_range){
+    # Set no of folds
+    noFolds=5
+    # Create the rows which fall into different folds from 1..noFolds
+    folds = sample(1:noFolds, nrow(cancer), replace=TRUE) 
+    # Initialize the training and test accuracy of folds to 0
+    trainingAccuracy <- 0
+    testAccuracy <- 0
+    
+    # Loop through the folds
+    for(j in 1:noFolds){
+        # The training is all rows for which the row is != j (k-1 folds -> training)
+        train <- cancer[folds!=j,]
+        # The rows which have j as the index become the test set
+        test <- cancer[folds==j,]
+        # Create a SVM model for this
+        svmfit=svm(output~., data=train, kernel="radial",cost=i,scale=TRUE)
+  
+        # Add up all the fold accuracy for training and test separately  
+        ypredTrain <-predict(svmfit,train)
+        ypredTest=predict(svmfit,test)
+        
+        # Create confusion matrix 
+        a <-confusionMatrix(ypredTrain,train$output)
+        b <-confusionMatrix(ypredTest,test$output)
+        # Get the accuracy
+        trainingAccuracy <-trainingAccuracy + a$overall[1]
+        testAccuracy <-testAccuracy+b$overall[1]
+
+    }
+    # Compute the average of accuracy for K folds for number of features 'i'
+    overallTrainAccuracy=c(overallTrainAccuracy,trainingAccuracy/noFolds)
+    overallTestAccuracy=c(overallTestAccuracy,testAccuracy/noFolds)
+
+    #Create a dataframe
+    a <- rbind(param_range,as.numeric(overallTrainAccuracy),
+               as.numeric(overallTestAccuracy))
+    b <- data.frame(t(a))
+    names(b) <- c("C1","trainingAccuracy","testAccuracy")
+    df <- melt(b,id="C1")
+    #Plot in log axis
+    ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
+      xlab("C (SVC regularization)value") + ylab("Accuracy") +
+      ggtitle("Training and test accuracy vs C(regularization)") + scale_x_log10()
+}
+
+```
+
+#Validation curve - Python
+
+```{python}
+
+import numpy as np
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.svm import SVC
+from sklearn.model_selection import validation_curve
+
+
+# Load the cancer data
+(X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
+scaler = MinMaxScaler()
+X_scaled = scaler.fit_transform(X_cancer)
+
+
+param_range = np.logspace(-3, 2, 20)
+train_scores, test_scores = validation_curve(SVC(), X_scaled, y_cancer,
+                                            param_name='gamma',
+                                            param_range=param_range, cv=10)
+                                            
+                                            
+plt.figure()
+
+train_scores_mean = np.mean(train_scores, axis=1)
+train_scores_std = np.std(train_scores, axis=1)
+test_scores_mean = np.mean(test_scores, axis=1)
+test_scores_std = np.std(test_scores, axis=1)
+
+plt.title('Validation Curve with SVM')
+plt.xlabel('$\gamma$ (gamma)')
+plt.ylabel('Score')
+plt.ylim(0.0, 1.1)
+lw = 2
+
+plt.semilogx(param_range, train_scores_mean, label='Training score',
+            color='darkorange', lw=lw)
+
+plt.fill_between(param_range, train_scores_mean - train_scores_std,
+                train_scores_mean + train_scores_std, alpha=0.2,
+                color='darkorange', lw=lw)
+
+plt.semilogx(param_range, test_scores_mean, label='Cross-validation score',
+            color='navy', lw=lw)
+
+plt.fill_between(param_range, test_scores_mean - test_scores_std,
+                test_scores_mean + test_scores_std, alpha=0.2,
+                color='navy', lw=lw)
+
 ```
 
