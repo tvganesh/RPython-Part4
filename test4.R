@@ -153,11 +153,22 @@ set.seed(7)
 library(mlbench)
 library(caret)
 # load the dataset
-data(PimaIndiansDiabetes)
+cancer <- read.csv("cancer.csv")
+names(cancer) <-c('mean radius', 'mean texture', 'mean perimeter', 'mean area',
+                  'mean smoothness', 'mean compactness', 'mean concavity',
+                  'mean concave points', 'mean symmetry', 'mean fractal dimension',
+                  'radius error', 'texture error', 'perimeter error', 'area error',
+                  'smoothness error', 'compactness error', 'concavity error',
+                  'concave points error', 'symmetry error', 'fractal dimension error',
+                  'worst radius', 'worst texture', 'worst perimeter', 'worst area',
+                  'worst smoothness', 'worst compactness', 'worst concavity',
+                  'worst concave points', 'worst symmetry', 'worst fractal dimension','target')
+#names(cancer) <- c(seq(1,30),"output")
+cancer$target <- as.factor(cancer$target)
 # prepare training scheme
 control <- trainControl(method="repeatedcv", number=10, repeats=3)
 # train the model
-model <- train(diabetes~., data=cancer, method="lvq", preProcess="scale", trControl=control)
+model <- train(target~., data=cancer, method="lvq", preProcess="scale", trControl=control)
 # estimate variable importance
 importance <- varImp(model, scale=FALSE)
 # summarize importance
