@@ -54,6 +54,13 @@ ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
 
 
 ##################################################################################
+# The R equivalent of np.logspace
+seqLogSpace <- function(start,stop,len){
+  a=seq(log10(10^start),log10(10^stop),length=len)
+  10^a
+}
+
+
 library(dplyr)
 cancer <- read.csv("cancer.csv")
 names(cancer) <- c(seq(1,30),"output")
@@ -61,16 +68,18 @@ cancer$output <- as.factor(cancer$output)
 
 
 set.seed(6)
-# Set max number of features
 
 
-# Loop through each features
-
+acc
+param_range = seqLogSpace(-3,2,20)
+# Loop through values of C
+accuracy <- NULL
+for(i in param_range){
     # Set no of folds
     noFolds=5
     # Create the rows which fall into different folds from 1..noFolds
     folds = sample(1:noFolds, nrow(cancer), replace=TRUE) 
-    accuracy<-0
+    foldAccuracy<-0
     # Loop through the folds
     for(j in 1:noFolds){
         # The training is all rows for which the row is != j (k-1 folds -> training)
@@ -78,16 +87,18 @@ set.seed(6)
         # The rows which have j as the index become the test set
         test <- cancer[folds==j,]
         # Create a SVM model for this
-        svmfit=svm(output~., data=train, kernel="radial",cost=10,scale=TRUE)
+        svmfit=svm(output~., data=train, kernel="radial",cost=i,scale=TRUE)
 
         ypred=predict(svmfit,test)
         a <-confusionMatrix(ypred,test$output)
         testAccuracy <-a$overall[1]
         # Add all the Cross Validation errors
-        accuracy=accuracy+testAccuracy
+        foldAccuracy=foldAccuracy+testAccuracy
     }
     # Compute the average of MSE for K folds for number of features 'i'
-    accuracy=accuracy/noFolds
+    accuracy=c(accuracy,foldAccuracy/noFolds)
+    print(accuracy)
+}
 
 a <- seq(1,13)
 d <- as.data.frame(t(rbind(a,cvError)))
@@ -98,6 +109,8 @@ ggplot(d,aes(x=Features,y=CVError),color="blue") + geom_point() + geom_line(colo
     ggtitle("Forward Selection - Cross Valdation Error vs No of Features")
 
 
-
-a=seq(log10(.001),log10(100),length=20)
-10^a
+# The R equivalent of np.logspace
+seqLogSpace <- function(start,stop,len){
+    a=seq(log10(10^start),log10(10^stop),length=len)
+    10^a
+}
