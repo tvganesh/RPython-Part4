@@ -61,7 +61,7 @@ seqLogSpace <- function(start,stop,len){
 }
 
 
-library(dplyr)
+
 cancer <- read.csv("cancer.csv")
 names(cancer) <- c(seq(1,30),"output")
 cancer$output <- as.factor(cancer$output)
@@ -70,16 +70,22 @@ cancer$output <- as.factor(cancer$output)
 set.seed(6)
 
 
-acc
+# Create the range of C1 in log space
 param_range = seqLogSpace(-3,2,20)
-# Loop through values of C
-accuracy <- NULL
+# Initialize the overall training and test accuracy to NULL
+overallTrainAccuracy <- NULL
+overallTestAccuracy <- NULL
+
+# Loop over the parameter range of C1
 for(i in param_range){
     # Set no of folds
     noFolds=5
     # Create the rows which fall into different folds from 1..noFolds
     folds = sample(1:noFolds, nrow(cancer), replace=TRUE) 
-    foldAccuracy<-0
+    # Initialize the training and test accuracy of folds to 0
+    trainingAccuracy <- 0
+    testAccuracy <- 0
+    
     # Loop through the folds
     for(j in 1:noFolds){
         # The training is all rows for which the row is != j (k-1 folds -> training)
@@ -88,17 +94,36 @@ for(i in param_range){
         test <- cancer[folds==j,]
         # Create a SVM model for this
         svmfit=svm(output~., data=train, kernel="radial",cost=i,scale=TRUE)
+  
+        # Add up all the fold accuracy for training and test separately  
+        ypredTrain <-predict(svmfit,train)
+        ypredTest=predict(svmfit,test)
+        
+        # Create confusion matrix 
+        a <-confusionMatrix(ypredTrain,train$output)
+        b <-confusionMatrix(ypredTest,test$output)
+        # Get the accuracy
+        trainingAccuracy <-trainingAccuracy + a$overall[1]
+        testAccuracy <-testAccuracy+b$overall[1]
 
-        ypred=predict(svmfit,test)
-        a <-confusionMatrix(ypred,test$output)
-        testAccuracy <-a$overall[1]
-        # Add all the Cross Validation errors
-        foldAccuracy=foldAccuracy+testAccuracy
     }
-    # Compute the average of MSE for K folds for number of features 'i'
-    accuracy=c(accuracy,foldAccuracy/noFolds)
-    print(accuracy)
+    # Compute the average of accuracy for K folds for number of features 'i'
+    overallTrainAccuracy=c(overallTrainAccuracy,trainingAccuracy/noFolds)
+    overallTestAccuracy=c(overallTestAccuracy,testAccuracy/noFolds)
+
+    #Create a dataframe
+    a <- rbind(param_range,as.numeric(overallTrainAccuracy),
+               as.numeric(overallTestAccuracy))
+    b <- data.frame(t(a))
+    names(b) <- c("C1","trainingAccuracy","testAccuracy")
+    df <- melt(b,id="C1")
+    #Plot in log axis
+    ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
+      xlab("C (SVC regularization)value") + ylab("Accuracy") +
+      ggtitle("Training and test accuracy vs C(regularization)") + scale_x_log10()
 }
+
+
 
 a <- seq(1,13)
 d <- as.data.frame(t(rbind(a,cvError)))
