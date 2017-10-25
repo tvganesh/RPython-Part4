@@ -392,3 +392,36 @@ graph = graphviz.Source(dot_data)
 graph 
 ```
 
+
+
+## Feature  importance
+```{python}
+from sklearn.tree import DecisionTreeClassifier
+from adspy_shared_utilities import plot_decision_tree
+from sklearn.datasets import load_breast_cancer
+from adspy_shared_utilities import plot_feature_importances
+import numpy as np
+cancer= load_breast_cancer()
+X_train, X_test, y_train, y_test = train_test_split(X_cancer, y_cancer, random_state = 0)
+
+clf = DecisionTreeClassifier(max_depth = 4, min_samples_leaf = 8,
+                            random_state = 0).fit(X_train, y_train)
+
+c_features=len(cancer.feature_names)
+print('Breast cancer dataset: decision tree')
+print('Accuracy of DT classifier on training set: {:.2f}'
+     .format(clf.score(X_train, y_train)))
+print('Accuracy of DT classifier on test set: {:.2f}'
+     .format(clf.score(X_test, y_test)))
+
+plt.figure(figsize=(10,6),dpi=80)
+
+plt.barh(range(c_features), clf.feature_importances_)
+plt.xlabel("Feature importance")
+plt.ylabel("Feature name")
+plt.yticks(np.arange(c_features), cancer.feature_names)
+plt.tight_layout()
+
+plt.show()
+```
+
