@@ -96,3 +96,8 @@ names(d) <- c("Features","CVError")
 ggplot(d,aes(x=Features,y=CVError),color="blue") + geom_point() + geom_line(color="blue") +
     xlab("No of features") + ylab("Cross Validation Error") +
     ggtitle("Forward Selection - Cross Valdation Error vs No of Features")
+
+
+
+a=seq(log10(.001),log10(100),length=20)
+10^a
