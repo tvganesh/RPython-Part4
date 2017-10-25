@@ -106,18 +106,18 @@ for(i in param_range){
     # Compute the average of accuracy for K folds for number of features 'i'
     overallTrainAccuracy=c(overallTrainAccuracy,trainingAccuracy/noFolds)
     overallTestAccuracy=c(overallTestAccuracy,testAccuracy/noFolds)
-
-    #Create a dataframe
-    a <- rbind(param_range,as.numeric(overallTrainAccuracy),
-               as.numeric(overallTestAccuracy))
-    b <- data.frame(t(a))
-    names(b) <- c("C1","trainingAccuracy","testAccuracy")
-    df <- melt(b,id="C1")
-    #Plot in log axis
-  #  ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
-    #  xlab("C (SVC regularization)value") + ylab("Accuracy") +
-   #   ggtitle("Training and test accuracy vs C(regularization)") + scale_x_log10()
 }
+#Create a dataframe
+a <- rbind(param_range,as.numeric(overallTrainAccuracy),
+               as.numeric(overallTestAccuracy))
+b <- data.frame(t(a))
+names(b) <- c("C1","trainingAccuracy","testAccuracy")
+df <- melt(b,id="C1")
+#Plot in log axis
+ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
+      xlab("C (SVC regularization)value") + ylab("Accuracy") +
+      ggtitle("Training and test accuracy vs C(regularization)") + scale_x_log10()
+#}
 
 
 
