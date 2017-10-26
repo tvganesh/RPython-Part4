@@ -204,3 +204,37 @@ RsquaredDummyClassifier <- function(train,test,type="majority"){
   }
   count
 }
+
+#################################
+#PRROC
+source("RFunctions-1.R")
+library(dplyr)
+library(caret)
+library(e1071)
+library(PRROC)
+# Read the data (from sklearn)
+d <- read.csv("digits.csv")
+digits <- d[2:66]
+
+# Split as training and test sets
+train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
+train <- cancer[train_idx, ]
+test <- cancer[-train_idx, ]
+
+# Fit a generalized linear logistic model, 
+fit=glm(output~.,family=binomial,data=train,control = list(maxit = 50))
+# Predict the output from the model
+a=predict(fit,newdata=train,type="response")
+# Set response >0.5 as 1 and <=0.5 as 0
+b=ifelse(a>0.5,1,0)
+# Compute the confusion matrix for training data
+confusionMatrix(b,train$output)
+
+m=predict(fit,newdata=test,type="response")
+x <- m[m>0.5]
+y <- m[m<=0.5]
+pr <- pr.curve( x, y, curve = TRUE )
+plot(pr)
+n=ifelse(m>0.5,1,0)
+# Compute the confusion matrix for test output
+confusionMatrix(n,test$output)
