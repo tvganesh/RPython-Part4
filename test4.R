@@ -175,3 +175,32 @@ importance <- varImp(model, scale=FALSE)
 print(importance)
 # plot importance
 plot(importance)
+
+
+########################
+#Dummy classifier
+source('RFunctions-1.R')
+library(dplyr)
+library(e1071)
+library(caret)
+library(reshape2)
+library(ggplot2)
+
+cancer <- read.csv("cancer.csv")
+names(cancer) <- c(seq(1,30),"target")
+cancer$target <- as.factor(cancer$target)
+
+####################################
+#2 Plain SVM
+train_idx <- trainTestSplit(cancer,trainPercent=75,seed=5)
+train <- cancer[train_idx, ]
+test <- cancer[-train_idx, ]
+
+#Dummy classifier majoritrity class
+count <- sum(train$output==1)/dim(train)[1]
+RsquaredDummyClassifier <- function(train,test,type="majority"){
+  if(type=="majority"){
+      count <- sum(train$target==1)/dim(train)[1]
+  }
+  count
+}

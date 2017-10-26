@@ -55,6 +55,59 @@ print('Accuracy of Linear SVC classifier on test set: {:.2f}'
      .format(clf.score(X_test, y_test)))
 ```
 
+
+## Dummy classifier
+```{r}
+
+RsquaredDummyClassifier <- function(train,test,type="majority"){
+  if(type=="majority"){
+      count <- sum(train$target==1)/dim(train)[1]
+  }
+  count
+}
+
+
+cancer <- read.csv("cancer.csv")
+names(cancer) <- c(seq(1,30),"target")
+cancer$target <- as.factor(cancer$target)
+
+####################################
+#2 Plain SVM
+train_idx <- trainTestSplit(cancer,trainPercent=75,seed=5)
+train <- cancer[train_idx, ]
+test <- cancer[-train_idx, ]
+
+#Dummy classifier majoritrity class
+
+
+
+Rsquared(train,test)
+```
+
+
+
+```{python}
+import numpy as np
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.dummy import DummyClassifier
+from sklearn.metrics import confusion_matrix
+(X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
+X_train, X_test, y_train, y_test = train_test_split(X_cancer, y_cancer,
+                                                   random_state = 0)
+
+# Negative class (0) is most frequent
+dummy_majority = DummyClassifier(strategy = 'most_frequent').fit(X_train, y_train)
+# Therefore the dummy 'most_frequent' classifier always predicts class 0
+y_dummy_predictions = dummy_majority.predict(X_test)
+
+
+dummy_majority.score(X_test, y_test)
+```
+
 ##1.2a - Radial SVM (nnormlaized) - R 
 ```{r}
 library(dplyr)
@@ -457,3 +510,4 @@ plt.tight_layout()
 plt.show()
 ```
 
+# 
