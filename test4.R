@@ -215,14 +215,34 @@ library(PRROC)
 # Read the data (from sklearn)
 d <- read.csv("digits.csv")
 digits <- d[2:66]
+digits$X64 <- as.factor(digits$X64)
+
 
 # Split as training and test sets
 train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
-train <- cancer[train_idx, ]
-test <- cancer[-train_idx, ]
+train <- digits[train_idx, ]
+test <- digits[-train_idx, ]
+
+svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
+ypred=predict(svmfit,test,probability=FALSE)
+ypred=predict(svmfit,test,probability=TRUE)
+confusionMatrix(ypred,test$X64)
+
+m0<-attr(ypred,"probabilities")[,1]
+m1<-attr(ypred,"probabilities")[,2]
+pr<-pr.curve(m0, m1,curve=TRUE)
+plot(pr)
+
+roc<-roc.curve(m0, m1,curve=TRUE)
+plot(roc)
+
+svmfit=svm(X64~., data=train, kernel="radial",scale=TRUE)
+ypred=predict(svmfit,test)
+confusionMatrix(ypred,test$X64)
 
 # Fit a generalized linear logistic model, 
-fit=glm(output~.,family=binomial,data=train,control = list(maxit = 50))
+fit=glm(X64~.,family=binomial,data=train,control = list(maxit = 100))
+#fit=glm(X64~.,family=binomial,data=train)
 # Predict the output from the model
 a=predict(fit,newdata=train,type="response")
 # Set response >0.5 as 1 and <=0.5 as 0
@@ -238,3 +258,26 @@ plot(pr)
 n=ifelse(m>0.5,1,0)
 # Compute the confusion matrix for test output
 confusionMatrix(n,test$output)
+
+
+######################################################################
+source("RFunctions-1.R")
+library(dplyr)
+library(caret)
+library(e1071)
+library(PRROC)
+# Read the data (from sklearn)
+d <- read.csv("digits.csv")
+digits <- d[2:66]
+digits$X64 <- as.factor(digits$X64)
+
+
+# Split as training and test sets
+train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
+train <- digits[train_idx, ]
+test <- digits[-train_idx, ]
+# Fit a generalized linear logistic model, 
+fit=glm(X64~.,family=binomial,data=train,control = list(maxit = 100))
+#fit=glm(X64~.,family=binomial,data=train)
+# Predict the output from the model
+a=predict(fit,newdata=train,type="response")
