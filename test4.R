@@ -224,12 +224,25 @@ train <- digits[train_idx, ]
 test <- digits[-train_idx, ]
 
 svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
-ypred=predict(svmfit,test,probability=FALSE)
-ypred=predict(svmfit,test,probability=TRUE)
-confusionMatrix(ypred,test$X64)
 
-m0<-attr(ypred,"probabilities")[,1]
-m1<-attr(ypred,"probabilities")[,2]
+ypred=predict(svmfit,test,probability=TRUE)
+
+a <- test$X64==1
+b <- test$X64==0
+m0<-attr(ypred,"probabilities")[a,1]
+m1<-attr(ypred,"probabilities")[b,1]
+
+pr<-pr.curve(m0, m1,curve=TRUE)
+plot(pr)
+
+roc<-roc.curve(m0, m1,curve=TRUE)
+plot(roc)
+
+#m0<-attr(ypred,"probabilities")[,1]
+#m1<-attr(ypred,"probabilities")[,2]
+
+
+
 pr<-pr.curve(m0, m1,curve=TRUE)
 plot(pr)
 
@@ -263,9 +276,7 @@ confusionMatrix(n,test$output)
 ######################################################################
 source("RFunctions-1.R")
 library(dplyr)
-library(caret)
-library(e1071)
-library(PRROC)
+library(precrec)
 # Read the data (from sklearn)
 d <- read.csv("digits.csv")
 digits <- d[2:66]
@@ -276,8 +287,36 @@ digits$X64 <- as.factor(digits$X64)
 train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
 train <- digits[train_idx, ]
 test <- digits[-train_idx, ]
-# Fit a generalized linear logistic model, 
-fit=glm(X64~.,family=binomial,data=train,control = list(maxit = 100))
-#fit=glm(X64~.,family=binomial,data=train)
-# Predict the output from the model
-a=predict(fit,newdata=train,type="response")
+
+svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE)
+
+#ypred=predict(svmfit,test)
+ypred=predict(svmfit,test,decision.values=TRUE)
+
+a <-attr(ypred,"decision.values")
+
+b <- test$X64==1
+c <- test$X64==0
+m0 <-a[b]
+m1 <-a[c]
+
+pr<-pr.curve(m1, m0,curve=TRUE)
+plot(pr)
+
+roc<-roc.curve(m1, m0,curve=TRUE)
+plot(roc)
+
+attr(,"decision.values")
+
+
+a <-as.numeric(as.character(ypred))
+b <- as.numeric(as.character(test$X64))
+
+pred <- prediction(a,b)
+perf <- performance(pred, "prec", "rec")
+
+# Recall-Precision curve             
+
+
+plot (perf,colorize=T)
+
