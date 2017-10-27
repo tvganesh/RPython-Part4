@@ -240,12 +240,28 @@ pr <- pr.curve(scores.class0=scores[scores$test.X64=="0",]$m0,
 
 plot(pr)
 
-############Works
+############   Works
+source("RFunctions-1.R")
+library(dplyr)
+library(caret)
+library(e1071)
+library(PRROC)
+# Read the data (from sklearn)
+d <- read.csv("digits.csv")
+digits <- d[2:66]
+digits$X64 <- as.factor(digits$X64)
+
+
+# Split as training and test sets
+train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
+train <- digits[train_idx, ]
+test <- digits[-train_idx, ]
+
 svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
-
 ypred=predict(svmfit,test,probability=TRUE)
-scores <- data.frame(m1,test$X64)
+head(attr(ypred,"probabilities"))
 
+scores <- data.frame(m1,test$X64)
 pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
                scores.class1=scores[scores$test.X64=="0",]$m1,
                curve=T)
