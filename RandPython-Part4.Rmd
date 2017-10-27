@@ -576,13 +576,14 @@ train <- digits[train_idx, ]
 test <- digits[-train_idx, ]
 
 svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
-ypred=predict(svmfit,test,probability=FALSE)
-ypred=predict(svmfit,test,probability=TRUE)
-confusionMatrix(ypred,test$X64)
 
-m0<-attr(ypred,"probabilities")[,1]
-m1<-attr(ypred,"probabilities")[,2]
-pr<-pr.curve(m0, m1,curve=TRUE)
+ypred=predict(svmfit,test,probability=TRUE)
+scores <- data.frame(m1,test$X64)
+
+pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
+               scores.class1=scores[scores$test.X64=="0",]$m1,
+               curve=T)
+
 plot(pr)
 
 roc<-roc.curve(m0, m1,curve=TRUE)

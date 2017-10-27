@@ -232,16 +232,47 @@ b <- test$X64==0
 m0<-attr(ypred,"probabilities")[a,1]
 m1<-attr(ypred,"probabilities")[b,1]
 
+scores <- data.frame(m0,test$X64)
+
+pr <- pr.curve(scores.class0=scores[scores$test.X64=="0",]$m0,
+               scores.class1=scores[scores$test.X64=="1",]$m0,
+               curve=T)
+
+plot(pr)
+
+############Works
+svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
+
+ypred=predict(svmfit,test,probability=TRUE)
+scores <- data.frame(m1,test$X64)
+
+pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
+               scores.class1=scores[scores$test.X64=="0",]$m1,
+               curve=T)
+
+plot(pr)
+
+#####Works
+
 pr<-pr.curve(m0, m1,curve=TRUE)
 plot(pr)
 
-roc<-roc.curve(m0, m1,curve=TRUE)
+oc<-roc.curve(m0, m1,curve=TRUE)
 plot(roc)
 
-#m0<-attr(ypred,"probabilities")[,1]
-#m1<-attr(ypred,"probabilities")[,2]
+
+ypred=predict(svmfit,test,decision.values=TRUE)
+
+a <-attr(ypred,"decision.values")
 
 
+scores <- data.frame(a,test$X64)
+pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$X0.1,
+               scores.class1=scores[scores$test.X64=="0",]$X0.1,
+               curve=T)
+
+m0<-attr(ypred,"probabilities")[,1]
+m1<-attr(ypred,"probabilities")[,2]
 
 pr<-pr.curve(m0, m1,curve=TRUE)
 plot(pr)
@@ -295,11 +326,10 @@ ypred=predict(svmfit,test,decision.values=TRUE)
 
 a <-attr(ypred,"decision.values")
 
-b <- test$X64==1
+ab <- test$X64==1
 c <- test$X64==0
 m0 <-a[b]
 m1 <-a[c]
-
 pr<-pr.curve(m1, m0,curve=TRUE)
 plot(pr)
 
