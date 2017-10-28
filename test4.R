@@ -261,6 +261,9 @@ svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
 ypred=predict(svmfit,test,probability=TRUE)
 head(attr(ypred,"probabilities"))
 
+m0<-attr(ypred,"probabilities")[,1]
+m1<-attr(ypred,"probabilities")[,2]
+
 scores <- data.frame(m1,test$X64)
 pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
                scores.class1=scores[scores$test.X64=="0",]$m1,
@@ -268,7 +271,10 @@ pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
 
 plot(pr)
 
-#####Works
+
+
+
+####
 
 pr<-pr.curve(m0, m1,curve=TRUE)
 plot(pr)
