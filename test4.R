@@ -9,9 +9,9 @@ library(ggplot2)
 library(rpart)
 library(rpart.plot)
 
-cancer <- read.csv("cancer.csv")
-names(cancer) <- c(seq(1,30),"output")
-cancer$output <- as.factor(cancer$output)
+cancer <- read.csv("cancer.csv",stringsAsFactors = FALSE)
+
+cancer$target <- as.factor(cancer$target)
 
 ####################################
 #2 Plain SVM

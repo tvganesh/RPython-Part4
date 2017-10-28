@@ -14,8 +14,8 @@ library(reshape2)
 library(ggplot2)
 
 cancer <- read.csv("cancer.csv")
-names(cancer) <- c(seq(1,30),"output")
-cancer$output <- as.factor(cancer$output)
+#names(cancer) <- c(seq(1,30),"output")
+cancer$target <- as.factor(cancer$target)
 
 ####################################
 #2 Plain SVM
@@ -23,9 +23,9 @@ train_idx <- trainTestSplit(cancer,trainPercent=75,seed=5)
 train <- cancer[train_idx, ]
 test <- cancer[-train_idx, ]
 
-svmfit=svm(output~., data=train, kernel="linear",scale=FALSE)
+svmfit=svm(target~., data=train, kernel="linear",scale=FALSE)
 ypred=predict(svmfit,test)
-confusionMatrix(ypred,test$output)
+confusionMatrix(ypred,test$target)
 
 ```
 
@@ -68,7 +68,6 @@ DummyClassifierRsquared <- function(train,test,type="majority"){
 
 
 cancer <- read.csv("cancer.csv")
-names(cancer) <- c(seq(1,30),"target")
 cancer$target <- as.factor(cancer$target)
 
 ####################################
@@ -78,8 +77,6 @@ train <- cancer[train_idx, ]
 test <- cancer[-train_idx, ]
 
 #Dummy classifier majoritrity class
-
-
 
 DummyClassifierRsquared(train,test)
 ```
@@ -105,7 +102,7 @@ dummy_majority = DummyClassifier(strategy = 'most_frequent').fit(X_train, y_trai
 y_dummy_predictions = dummy_majority.predict(X_test)
 
 
-dummy_majority.score(X_test, y_test)
+print(dummy_majority.score(X_test, y_test))
 ```
 
 ##1.2a - Radial SVM (nnormlaized) - R 
@@ -121,9 +118,9 @@ train_idx <- trainTestSplit(cancer,trainPercent=75,seed=5)
 train <- cancer[train_idx, ]
 test <- cancer[-train_idx, ]
 # Unnormalized data
-svmfit=svm(output~., data=train, kernel="radial",cost=10,scale=FALSE)
+svmfit=svm(target~., data=train, kernel="radial",cost=10,scale=FALSE)
 ypred=predict(svmfit,test)
-confusionMatrix(ypred,test$output)
+confusionMatrix(ypred,test$target)
 ```
 Python - unnormlaized
 ```{python}
@@ -157,11 +154,11 @@ testAccuracy <- NULL
 C1 <- c(.01,.1, 1, 10, 20)
 for(i in  C1){
   
-    svmfit=svm(output~., data=train, kernel="radial",cost=i,scale=TRUE)
+    svmfit=svm(target~., data=train, kernel="radial",cost=i,scale=TRUE)
     ypredTrain <-predict(svmfit,train)
     ypredTest=predict(svmfit,test)
-    a <-confusionMatrix(ypredTrain,train$output)
-    b <-confusionMatrix(ypredTest,test$output)
+    a <-confusionMatrix(ypredTrain,train$target)
+    b <-confusionMatrix(ypredTest,test$target)
     trainingAccuracy <-c(trainingAccuracy,a$overall[1])
     testAccuracy <-c(testAccuracy,b$overall[1])
     
@@ -218,7 +215,7 @@ df.columns=['trainingAccuracy','trainingAccuracy']
 
 fig5=df.plot()
 fig5=plt.title('Training and test accuracy vs C (SVC)')
-plt.show()
+
 ```
 
 # Validation curve - R
