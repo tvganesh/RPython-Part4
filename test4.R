@@ -279,7 +279,7 @@ plot(pr)
 pr<-pr.curve(m0, m1,curve=TRUE)
 plot(pr)
 
-oc<-roc.curve(m0, m1,curve=TRUE)
+roc<-roc.curve(m0, m1,curve=TRUE)
 plot(roc)
 
 

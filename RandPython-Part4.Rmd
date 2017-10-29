@@ -555,6 +555,9 @@ pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
                curve=T)
 
 plot(pr)
+
+roc<-roc.curve(m0, m1,curve=TRUE)
+plot(roc)
 ```
 
 
@@ -564,8 +567,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer
 from sklearn.linear_model import LogisticRegression
+from sklearn.datasets import load_digits
+dataset = load_digits()
+X, y = dataset.data, dataset.target
+# Make a copy of the target
+z= y.copy()
+# Replace all non 1's as 0
+z[z != 1] = 0
 
 X_train, X_test, y_train, y_test = train_test_split(X, z, random_state=0)
 
@@ -598,10 +607,11 @@ plt.plot(closest_zero_p, closest_zero_r, 'o', markersize = 12, fillstyle = 'none
 plt.xlabel('Precision', fontsize=16)
 plt.ylabel('Recall', fontsize=16)
 plt.axes().set_aspect('equal')
-plt.show()
+plt.savefig('fig5.png', bbox_inches='tight')
+
 ```
 
-
+![output](fig5.png)
 
 
 ```{python}
