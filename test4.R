@@ -64,8 +64,7 @@ seqLogSpace <- function(start,stop,len){
   10^a
 }
 cancer <- read.csv("cancer.csv")
-names(cancer) <- c(seq(1,30),"output")
-cancer$output <- as.factor(cancer$output)
+cancer$target <- as.factor(cancer$target)
 
 set.seed(6)
 
@@ -93,15 +92,15 @@ for(i in param_range){
         # The rows which have j as the index become the test set
         test <- cancer[folds==j,]
         # Create a SVM model for this
-        svmfit=svm(output~., data=train, kernel="radial",gamma=i,scale=TRUE)
+        svmfit=svm(target~., data=train, kernel="radial",gamma=i,scale=TRUE)
   
         # Add up all the fold accuracy for training and test separately  
         ypredTrain <-predict(svmfit,train)
         ypredTest=predict(svmfit,test)
         
         # Create confusion matrix 
-        a <-confusionMatrix(ypredTrain,train$output)
-        b <-confusionMatrix(ypredTest,test$output)
+        a <-confusionMatrix(ypredTrain,train$target)
+        b <-confusionMatrix(ypredTest,test$target)
         # Get the accuracy
         trainingAccuracy <-trainingAccuracy + a$overall[1]
         testAccuracy <-testAccuracy+b$overall[1]

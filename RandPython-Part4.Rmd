@@ -231,8 +231,7 @@ seqLogSpace <- function(start,stop,len){
   10^a
 }
 cancer <- read.csv("cancer.csv")
-names(cancer) <- c(seq(1,30),"output")
-cancer$output <- as.factor(cancer$output)
+cancer$target <- as.factor(cancer$target)
 
 set.seed(6)
 
@@ -260,15 +259,15 @@ for(i in param_range){
         # The rows which have j as the index become the test set
         test <- cancer[folds==j,]
         # Create a SVM model for this
-        svmfit=svm(output~., data=train, kernel="radial",gamma=i,scale=TRUE)
+        svmfit=svm(target~., data=train, kernel="radial",gamma=i,scale=TRUE)
   
         # Add up all the fold accuracy for training and test separately  
         ypredTrain <-predict(svmfit,train)
         ypredTest=predict(svmfit,test)
         
         # Create confusion matrix 
-        a <-confusionMatrix(ypredTrain,train$output)
-        b <-confusionMatrix(ypredTest,test$output)
+        a <-confusionMatrix(ypredTrain,train$target)
+        b <-confusionMatrix(ypredTest,test$target)
         # Get the accuracy
         trainingAccuracy <-trainingAccuracy + a$overall[1]
         testAccuracy <-testAccuracy+b$overall[1]
@@ -609,47 +608,32 @@ plt.ylabel('Recall', fontsize=16)
 plt.axes().set_aspect('equal')
 plt.savefig('fig5.png', bbox_inches='tight')
 
+from sklearn.metrics import roc_curve, auc
+
+X_train, X_test, y_train, y_test = train_test_split(X, z, random_state=0)
+
+y_score_lr = lr.fit(X_train, y_train).decision_function(X_test)
+fpr_lr, tpr_lr, _ = roc_curve(y_test, y_score_lr)
+roc_auc_lr = auc(fpr_lr, tpr_lr)
+
+plt.figure()
+plt.xlim([-0.01, 1.00])
+plt.ylim([-0.01, 1.01])
+plt.plot(fpr_lr, tpr_lr, lw=3, label='LogRegr ROC curve (area = {:0.2f})'.format(roc_auc_lr))
+plt.xlabel('False Positive Rate', fontsize=16)
+plt.ylabel('True Positive Rate', fontsize=16)
+plt.title('ROC curve (1-of-10 digits classifier)', fontsize=16)
+plt.legend(loc='lower right', fontsize=13)
+plt.plot([0, 1], [0, 1], color='navy', lw=3, linestyle='--')
+plt.axes()
+plt.savefig('fig6.png', bbox_inches='tight')
+
 ```
 
 ![output](fig5.png)
 
 
-```{python}
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer
-from sklearn.linear_model import LogisticRegression
-
-X_train, X_test, y_train, y_test = train_test_split(X, z, random_state=0)
-
-lr = LogisticRegression().fit(X_train, y_train)
-
-# Use probability instead of Decision Function since R has probability of prediction
-y_proba_lr = lr.fit(X_train, y_train).predict_proba(X_test)
-y_proba_list = list(zip(y_test[0:20], y_proba_lr[0:20,1]))
-
-# show the probability of positive class for first 20 instances
-y_proba_list
-
-from sklearn.metrics import precision_recall_curve
-
-precision, recall, thresholds = precision_recall_curve(y_test, y_scores_lr)
-closest_zero = np.argmin(np.abs(thresholds))
-closest_zero_p = precision[closest_zero]
-closest_zero_r = recall[closest_zero]
-#plt.figure(figsize=(15,15),dpi=80)
-plt.figure()
-plt.xlim([0.0, 1.01])
-plt.ylim([0.0, 1.01])
-plt.plot(precision, recall, label='Precision-Recall Curve')
-plt.plot(closest_zero_p, closest_zero_r, 'o', markersize = 12, fillstyle = 'none', c='r', mew=3)
-plt.xlabel('Precision', fontsize=16)
-plt.ylabel('Recall', fontsize=16)
-plt.axes().set_aspect('equal')
-
-```
+![output](fig6.png)
 
 ## Using the LinearSVC for precision recall
 ```{python}
@@ -692,6 +676,7 @@ plt.plot(closest_zero_p, closest_zero_r, 'o', markersize = 12, fillstyle = 'none
 plt.xlabel('Precision', fontsize=16)
 plt.ylabel('Recall', fontsize=16)
 plt.axes().set_aspect('equal')
-plt.show()
+plt.savefig('fig7.png', bbox_inches='tight')
 ```
 
+![output](fig7.png)
