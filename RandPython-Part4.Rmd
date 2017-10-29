@@ -352,6 +352,7 @@ fig2.figure.savefig('fig2.png', bbox_inches='tight')
 
 Output image:
 ![output](fig2.png)
+
 ## SVM Curve Python - Preventing data leakage
 ```{python}
 import numpy as np
@@ -438,7 +439,6 @@ rpart.plot(m,extra=2,main="Decision Tree - IRIS")
 from sklearn.datasets import load_iris
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import tree
-#from adspy_shared_utilities import plot_decision_tree
 from sklearn.model_selection import train_test_split
 import graphviz 
 
@@ -458,35 +458,26 @@ dot_data = tree.export_graphviz(clf, out_file=None,
                          filled=True, rounded=True,  
                          special_characters=True)  
 graph = graphviz.Source(dot_data)  
-graph 
+graph
 ```
 
 
 ## Feature  importance - R
 ```{r}
-set.seed(7)
+set.seed(3)
 # load the library
 library(mlbench)
 library(caret)
 # load the dataset
 cancer <- read.csv("cancer.csv")
-names(cancer) <-c('mean radius', 'mean texture', 'mean perimeter', 'mean area',
-                  'mean smoothness', 'mean compactness', 'mean concavity',
-                  'mean concave points', 'mean symmetry', 'mean fractal dimension',
-                  'radius error', 'texture error', 'perimeter error', 'area error',
-                  'smoothness error', 'compactness error', 'concavity error',
-                  'concave points error', 'symmetry error', 'fractal dimension error',
-                  'worst radius', 'worst texture', 'worst perimeter', 'worst area',
-                  'worst smoothness', 'worst compactness', 'worst concavity',
-                  'worst concave points', 'worst symmetry', 'worst fractal dimension','target')
-#names(cancer) <- c(seq(1,30),"output")
 cancer$target <- as.factor(cancer$target)
-# prepare training scheme
-control <- trainControl(method="repeatedcv", number=10, repeats=3)
+TrainData <- cancer[,1:31]
+TrainClasses <- cancer[,32]
+
 # train the model
-model <- train(target~., data=cancer, method="lvq", preProcess="scale", trControl=control)
+model <- train(TrainData, TrainClasses, method="rf", preProcess="scale", trControl=trainControl(method = "cv"))
 # estimate variable importance
-importance <- varImp(model, scale=FALSE)
+importance <- varImp(model)
 # summarize importance
 print(importance)
 # plot importance
@@ -497,14 +488,17 @@ plot(importance)
 
 ## Feature  importance
 ```{python}
+import numpy as np
+import pandas as pd
+import os
+import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeClassifier
-from adspy_shared_utilities import plot_decision_tree
+from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer
-from adspy_shared_utilities import plot_feature_importances
 import numpy as np
 cancer= load_breast_cancer()
+(X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
 X_train, X_test, y_train, y_test = train_test_split(X_cancer, y_cancer, random_state = 0)
-
 clf = DecisionTreeClassifier(max_depth = 4, min_samples_leaf = 8,
                             random_state = 0).fit(X_train, y_train)
 
@@ -515,18 +509,53 @@ print('Accuracy of DT classifier on training set: {:.2f}'
 print('Accuracy of DT classifier on test set: {:.2f}'
      .format(clf.score(X_test, y_test)))
 
-plt.figure(figsize=(10,6),dpi=80)
+fig4=plt.figure(figsize=(10,6),dpi=80)
 
-plt.barh(range(c_features), clf.feature_importances_)
-plt.xlabel("Feature importance")
-plt.ylabel("Feature name")
-plt.yticks(np.arange(c_features), cancer.feature_names)
-plt.tight_layout()
+fig4=plt.barh(range(c_features), clf.feature_importances_)
+fig4=plt.xlabel("Feature importance")
+fig4=plt.ylabel("Feature name")
+fig4=plt.yticks(np.arange(c_features), cancer.feature_names)
+fig4=plt.tight_layout()
+plt.savefig('fig4.png', bbox_inches='tight')
 
-plt.show()
 ```
 
 
+Output image:
+![output](fig4.png)
+
+#Precision recall curve and AUC - R
+```{r}
+source("RFunctions-1.R")
+library(dplyr)
+library(caret)
+library(e1071)
+library(PRROC)
+# Read the data (from sklearn)
+d <- read.csv("digits.csv")
+digits <- d[2:66]
+digits$X64 <- as.factor(digits$X64)
+
+
+# Split as training and test sets
+train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
+train <- digits[train_idx, ]
+test <- digits[-train_idx, ]
+
+svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
+ypred=predict(svmfit,test,probability=TRUE)
+head(attr(ypred,"probabilities"))
+
+m0<-attr(ypred,"probabilities")[,1]
+m1<-attr(ypred,"probabilities")[,2]
+
+scores <- data.frame(m1,test$X64)
+pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
+               scores.class1=scores[scores$test.X64=="0",]$m1,
+               curve=T)
+
+plot(pr)
+```
 
 
 # Precision _recall - Python
@@ -573,38 +602,7 @@ plt.show()
 ```
 
 
-#Precision recall curve and AUC - R
-```{r}
-source("RFunctions-1.R")
-library(dplyr)
-library(caret)
-library(e1071)
-library(PRROC)
-# Read the data (from sklearn)
-d <- read.csv("digits.csv")
-digits <- d[2:66]
-digits$X64 <- as.factor(digits$X64)
 
-
-# Split as training and test sets
-train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
-train <- digits[train_idx, ]
-test <- digits[-train_idx, ]
-
-svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
-
-ypred=predict(svmfit,test,probability=TRUE)
-scores <- data.frame(m1,test$X64)
-
-pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
-               scores.class1=scores[scores$test.X64=="0",]$m1,
-               curve=T)
-
-plot(pr)
-
-roc<-roc.curve(m0, m1,curve=TRUE)
-plot(roc)
-```
 
 ```{python}
 import numpy as np

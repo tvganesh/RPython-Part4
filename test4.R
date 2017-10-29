@@ -148,7 +148,7 @@ rpart.plot(m,extra=2,main="Decision Tree - IRIS")
 
 
 #https://machinelearningmastery.com/feature-selection-with-the-caret-r-package/
-set.seed(7)
+set.seed(1)
 # load the library
 library(mlbench)
 library(caret)
@@ -371,4 +371,31 @@ perf <- performance(pred, "prec", "rec")
 
 
 plot (perf,colorize=T)
+
+
+
+
+
+
+
+
+############################################
+set.seed(7)
+# load the library
+library(mlbench)
+library(caret)
+# load the dataset
+cancer <- read.csv("cancer.csv")
+cancer$target <- as.factor(cancer$target)
+TrainData <- cancer[,1:31]
+TrainClasses <- cancer[,32]
+
+# train the model
+model <- train(TrainData, TrainClasses, method="rf", preProcess="scale", trControl=trainControl(method = "cv"))
+# estimate variable importance
+importance <- varImp(model)
+# summarize importance
+print(importance)
+# plot importance
+plot(importance)
 
