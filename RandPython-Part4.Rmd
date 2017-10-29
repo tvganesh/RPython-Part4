@@ -4,7 +4,37 @@ author: "Tinniam V Ganesh"
 date: "October 25, 2017"
 output: html_document
 ---
-## 1.1 a. Linear SVM - R
+This is the 4th installment of my "Practical Machine Learning with R and Python -Part 4". In this part I discuss classification with Support Vector Machines using both a Linear and a Radial basis kernel and Decision Trees. Further a closer look is taken at some of the metrics associated with binary classification problems namely precision and recall. I touch upon validation curves, Precision-Recall, ROC curves and AUC with equivalent code in R and Python
+
+This post is a continuation of my 3 earlier posts on Practical Machine Learning in R and Python
+
+1. [Practical Machine Learning with R and Python - Part 1](https://gigadom.wordpress.com/2017/10/06/practical-machine-learning-with-r-and-python-part-1/)
+
+2. [Practical Machine Learning with R and Python - Part 1](https://gigadom.wordpress.com/2017/10/13/practical-machine-learning-with-r-and-python-part-2/)
+
+3. [Practical Machine Learning with R and Python - Part 3](https://gigadom.wordpress.com/2017/10/20/practical-machine-learning-with-r-and-python-part-3/)
+
+Support Vector Machines (SVM) are another useful Machine Learning model that can be used for both
+regression and classification problems. SVMs compute the hyperplane of a dataset with 'p'features
+that separates the 2 classes with the maximum margin. SVMs can be used with different kernels namely linear, polynomial or radial basis to determine the best fitting model for a given classification problem.
+
+Classification problems
+While in the 2nd part of this series I had mentioned the various metrics that are used in classification ML problems namely Accuracy, Precision, Recall and F1 score. Accuracy gives the fraction of data that were correctly classified as belonging to the +ve or -ve class. However 'accuracy' in itself is not a good enough measure because it does not take into account the fraction of the data that were incorrecly classified. This issue becomes even more critical in different domains. For e.g a surgeon who is would like to detect cancer would like to err on the side of caution and classify even a possibly non-cancerous patient as possibly having cancer rather than misclassifying a malignancy as beingn. Here we would like to increase recall or sensitivity which
+Recall= TP/(TP+FN)
+or we try reduce misclassifying a malignant tissue as benign
+
+On the other hand search algorithms would like to increase precision which tries to reduce the number of irrelevant results in the search result.
+Precision= TP/(TP+FP)
+
+In other words we do not want 'false positives' or irrelevant results to come in the search results and there is a need to reduce the false positives.
+
+When we try to increase 'precision' we do so at the cost of 'recall' and vice-versa. I found this diagram and explanation in Wikipedia very useful
+Source: [Wikipedia](https://en.wikipedia.org/wiki/Precision_and_recall)
+Picture
+"Consider a brain surgeon tasked with removing a cancerous tumor from a patient's brain. The surgeon needs to remove all of the tumor cells since any remaining cancer cells will regenerate the tumor. Conversely, the surgeon must not remove healthy brain cells since that would leave the patient with impaired brain function. The surgeon may be more liberal in the area of the brain she removes to ensure she has extracted all the cancer cells. This decision increases recall but reduces precision. On the other hand, the surgeon may be more conservative in the brain she removes to ensure she extracts only cancer cells. This decision increases precision but reduces recall. That is to say, greater recall increases the chances of removing healthy cells (negative outcome) and increases the chances of removing all cancer cells (positive outcome). Greater precision decreases the chances of removing healthy cells (positive outcome) but also decreases the chances of removing all cancer cells (negative outcome)."
+
+## 1.1a. Linear SVM - R code
+In R code below I use SVM with linear kernel
 ```{r}
 source('RFunctions-1.R')
 library(dplyr)
@@ -13,23 +43,26 @@ library(caret)
 library(reshape2)
 library(ggplot2)
 
+# Read data. Data from SKLearn
 cancer <- read.csv("cancer.csv")
-#names(cancer) <- c(seq(1,30),"output")
 cancer$target <- as.factor(cancer$target)
 
-####################################
-#2 Plain SVM
+# Split into training and test sets
 train_idx <- trainTestSplit(cancer,trainPercent=75,seed=5)
 train <- cancer[train_idx, ]
 test <- cancer[-train_idx, ]
 
+# Fit a linear basis kernel. DO not scale the data
 svmfit=svm(target~., data=train, kernel="linear",scale=FALSE)
 ypred=predict(svmfit,test)
+#Print a confusion matrix
 confusionMatrix(ypred,test$target)
 
 ```
 
-## 1.1b Linear SVM - Python
+## 1.1b Linear SVM - Python code 
+The code below creates a SVM with linear basis in Python and also dumps the corresponding
+classification metrics
 ```{python}
 import numpy as np
 import pandas as pd
@@ -56,10 +89,20 @@ print('Accuracy of Linear SVC classifier on test set: {:.2f}'
 ```
 
 
-## Dummy classifier
+## 1.2 Dummy classifier
+Often when we perform classification tasks using any ML model namely logistic regression, SVM,
+neural networks etc. it is very useful to determine how well the ML model performs agains at 
+dummy classifier. A dummy classifier uses some simple computation like frequency of majority class, instead of fitting and ML model. It is essential that our ML model does much better that the dummy classifier. This problem is even more important in imbalanced classes where we have only about 10% of +ve samples. If any ML model we create has a accuracy of about 0.90 then it is evident that our classifier is not doing any better than a dummy classsfier which can just take a majority count of this imbalanced class and also come up with 0.90. We need to be able to do better than that.
+
+In the examples below (1.3a & 1.3b) it can be  seen that SVMs with 'radial basis' kernel with unnormalized data, for both R and Python, do not perform any better than the dummy classifier.
+
+
+## 1.2a Dummy classifier - R code
+R does not seem to have an explicit dummy classifier. I created a simple dummy classifier that predicts the majority class. SKlearn in Python also includes other strategies like uniform, stratified etc. but this should be possible to create in R also.
 ```{r}
 
-DummyClassifierRsquared <- function(train,test,type="majority"){
+# Create a simple dummy classifier that computes the ratio of the majority class to the totla
+DummyClassifierAccuracy <- function(train,test,type="majority"){
   if(type=="majority"){
       count <- sum(train$target==1)/dim(train)[1]
   }
@@ -70,18 +113,18 @@ DummyClassifierRsquared <- function(train,test,type="majority"){
 cancer <- read.csv("cancer.csv")
 cancer$target <- as.factor(cancer$target)
 
-####################################
-#2 Plain SVM
+# Create training and test sets
 train_idx <- trainTestSplit(cancer,trainPercent=75,seed=5)
 train <- cancer[train_idx, ]
 test <- cancer[-train_idx, ]
 
-#Dummy classifier majoritrity class
-
-DummyClassifierRsquared(train,test)
+#Dummy classifier majority class
+acc=DummyClassifierAccuracy(train,test)
+sprintf("Accuracy is %f",acc)
 ```
 
-
+## 1.2b Dummy classifier - Python code
+This dummy classifier uses the majority class.
 
 ```{python}
 import numpy as np
@@ -98,16 +141,16 @@ X_train, X_test, y_train, y_test = train_test_split(X_cancer, y_cancer,
 
 # Negative class (0) is most frequent
 dummy_majority = DummyClassifier(strategy = 'most_frequent').fit(X_train, y_train)
-# Therefore the dummy 'most_frequent' classifier always predicts class 0
 y_dummy_predictions = dummy_majority.predict(X_test)
 
 print('Dummy classifier accuracy on test set: {:.2f}'
      .format(dummy_majority.score(X_test, y_test)))
 
-
 ```
 
-##1.2a - Radial SVM (nnormlaized) - R 
+## 1.3a - Radial SVM (un-normalized) - R code
+SVMs perform better when the data is normalized or scaled. The 2 examples below show that
+SVM with radial basis kernel does not perform any better than the dummy classifier
 ```{r}
 library(dplyr)
 library(e1071)
@@ -124,7 +167,7 @@ svmfit=svm(target~., data=train, kernel="radial",cost=10,scale=FALSE)
 ypred=predict(svmfit,test)
 confusionMatrix(ypred,test$target)
 ```
-Python - Unnormalized
+## 1.3b - Radial SVM (un-normalized) - R code
 ```{python}
 import numpy as np
 import pandas as pd
