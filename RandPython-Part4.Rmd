@@ -167,7 +167,7 @@ svmfit=svm(target~., data=train, kernel="radial",cost=10,scale=FALSE)
 ypred=predict(svmfit,test)
 confusionMatrix(ypred,test$target)
 ```
-## 1.3b - Radial SVM (un-normalized) - R code
+## 1.4b - Radial SVM (un-normalized) - Python code
 ```{python}
 import numpy as np
 import pandas as pd
@@ -190,9 +190,12 @@ print('Accuracy of RBF-kernel SVC on training set: {:.2f}'
 print('Accuracy of RBF-kernel SVC on test set: {:.2f}'
      .format(clf.score(X_test, y_test)))
 ```
-##1.2a - Radial SVM -R Normalized
+## 1.5a - Radial SVM (Normalized) -R Code
+The data is scaled (normalized ) before using the SVM model. The SVM model has 2 paramaters
+a) C - Large C (less regularization), more regularization
+b) gamma - Small gamma has larger decision boundary with more misclassfication, and larger gamma has tighter decision boundary
 
-
+The R code below computes the accuracy as the regularization paramater is changed
 ```{r}
 trainingAccuracy <- NULL
 testAccuracy <- NULL
@@ -219,8 +222,8 @@ ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
     ggtitle("Training and test accuracy vs C(regularization)")
 ```
 
-##1.2a - Radial SVM (normalized) - Python
-
+## 1.5b - Radial SVM (normalized) - Python
+The Radial basis kernel is used on normalized data for a range of 'C' values and the result is plotted.
 ```{python}
 import numpy as np
 import pandas as pd
@@ -266,18 +269,21 @@ fig1.figure.savefig('fig1.png', bbox_inches='tight')
 Output image:
 ![output](fig1.png)
 
-# Validation curve - R
+## 1.6a Validation curve - R code
+Sklearn includes code creating validation curves by varying paramaters and computing and plotting accuracy as gamma or C or changd. I did not find this R but I think this is a useful function and so I have created the R equivalent of this.
+
 ```{r}
 # The R equivalent of np.logspace
 seqLogSpace <- function(start,stop,len){
   a=seq(log10(10^start),log10(10^stop),length=len)
   10^a
 }
+
+# Read the data. This is taken the SKlearn cancer data
 cancer <- read.csv("cancer.csv")
 cancer$target <- as.factor(cancer$target)
 
 set.seed(6)
-
 
 # Create the range of C1 in log space
 param_range = seqLogSpace(-3,2,20)
@@ -331,13 +337,12 @@ ggplot(df) + geom_line(aes(x=C1, y=value, colour=variable),size=2) +
       xlab("C (SVC regularization)value") + ylab("Accuracy") +
       ggtitle("Training and test accuracy vs C(regularization)") + scale_x_log10()
 
-
 ```
 
-#Validation curve - Python
+## 1.6b Validation curve - Python
+Compute and plot the validation curve as gamma is varied. 
 
 ```{python}
-
 import numpy as np
 import pandas as pd
 import os
@@ -354,15 +359,17 @@ from sklearn.model_selection import validation_curve
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(X_cancer)
 
-
+# Create a gamma values from 10^-3 to 10^2 with 20 equally spaced intervals
 param_range = np.logspace(-3, 2, 20)
+# Compute the validation curve
 train_scores, test_scores = validation_curve(SVC(), X_scaled, y_cancer,
                                             param_name='gamma',
                                             param_range=param_range, cv=10)
                                             
-                                            
+#Plot the figure                                           
 fig2=plt.figure()
 
+#Compute the mean
 train_scores_mean = np.mean(train_scores, axis=1)
 train_scores_std = np.std(train_scores, axis=1)
 test_scores_mean = np.mean(test_scores, axis=1)
@@ -395,7 +402,12 @@ fig2.figure.savefig('fig2.png', bbox_inches='tight')
 Output image:
 ![output](fig2.png)
 
-## SVM Curve Python - Preventing data leakage
+## 1.7a Validation Curve (Preventing data leakage) - Python code
+In this course 
+[Applied Machine Learning in Python](https://www.coursera.org/learn/python-machine-learning/), the Professor states that when we apply the same data transformation to a entire dataset, it will cause a data leakage. "The proper way to do cross-validation when you need to scale the data is not to scale the entire dataset with a single transform, since this will indirectly leak information into the training data about the whole dataset, including the test data (see the lecture on data leakage later in the course). Instead, scaling/normalizing must be computed and applied for each cross-validation fold separately"
+
+So I apply separate scaling to the training and testing folds and plot. In the lecture the Prof states that this can be done using pipelines.
+
 ```{python}
 import numpy as np
 import pandas as pd
@@ -406,15 +418,23 @@ from sklearn.cross_validation import  KFold
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.svm import SVC
 
+# Read the data
 (X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
+# Set the parameter range
 param_range = np.logspace(-3, 2, 20)
+
+# Set number of folds
 folds=5
+#Initialize
 overallTrainAccuracy=[]
 overallTestAccuracy=[]
+
+# Loop over the paramater range
 for c in  param_range:
     trainingAccuracy=0
     testAccuracy=0
     kf = KFold(len(X_cancer),n_folds=folds)
+    # Partition into training and test folds
     for train_index, test_index in kf:
             # Partition the data acccording the fold indices generated
             X_train, X_test = X_cancer[train_index], X_cancer[test_index]
@@ -425,12 +445,14 @@ for c in  param_range:
             scaler = MinMaxScaler()
             X_train_scaled = scaler.fit_transform(X_train)
             X_test_scaled = scaler.transform(X_test)
-            
+            # Fit a SVC model for each C
             clf = SVC(C=c).fit(X_train_scaled, y_train)
+            #Compute the training and test score
             acctrain=clf.score(X_train_scaled, y_train)
             accTest=clf.score(X_test_scaled, y_test)
             trainingAccuracy += np.sum(acctrain)
             testAccuracy += np.sum(accTest)
+    # Compute the mean training and testing accuracy
     overallTrainAccuracy.append(trainingAccuracy/folds)
     overallTestAccuracy.append(testAccuracy/folds)
         
@@ -452,7 +474,6 @@ lw = 2
 fig3=plt.semilogx(param_range, overallTrainAccuracy, label='Training score',
             color='darkorange', lw=lw)
 
-
 fig3=plt.semilogx(param_range, overallTestAccuracy, label='Cross-validation score',
             color='navy', lw=lw)
 
@@ -468,15 +489,18 @@ Output image:
 
 
 
-# Decision trees
+## 1.8 a Decision trees - R code
+Decision trees in R can be plotted using RPart package
 ```{r}
 library(rpart)
 library(rpart.plot)
 rpart = NULL
+# Create a decision tree
 m <-rpart(Species~.,data=iris)
+#Plot
 rpart.plot(m,extra=2,main="Decision Tree - IRIS")
 ```
-
+## 1.8b Decision trees - R code
 ```{python}
 from sklearn.datasets import load_iris
 from sklearn.tree import DecisionTreeClassifier
@@ -485,7 +509,6 @@ from sklearn.model_selection import train_test_split
 import graphviz 
 
 iris = load_iris()
-
 X_train, X_test, y_train, y_test = train_test_split(iris.data, iris.target, random_state = 3)
 clf = DecisionTreeClassifier().fit(X_train, y_train)
 
@@ -504,7 +527,8 @@ graph
 ```
 
 
-## Feature  importance - R
+## 1.9a Feature  importance - R code
+I found the following [code](https://machinelearningmastery.com/feature-selection-with-the-caret-r-package/) which had a snippet for feature importance. Sklean has a nice method for this. For some reason the results in R and Python are different. Any thoughts?
 ```{r}
 set.seed(3)
 # load the library
@@ -513,12 +537,13 @@ library(caret)
 # load the dataset
 cancer <- read.csv("cancer.csv")
 cancer$target <- as.factor(cancer$target)
-TrainData <- cancer[,1:31]
-TrainClasses <- cancer[,32]
+# Split as data
+data <- cancer[,1:31]
+target <- cancer[,32]
 
-# train the model
-model <- train(TrainData, TrainClasses, method="rf", preProcess="scale", trControl=trainControl(method = "cv"))
-# estimate variable importance
+# Train the model
+model <- train(data, target, method="rf", preProcess="scale", trControl=trainControl(method = "cv"))
+# Compute variable importance
 importance <- varImp(model)
 # summarize importance
 print(importance)
@@ -528,7 +553,7 @@ plot(importance)
 
 
 
-## Feature  importance
+## 1.9b Feature  importance - Python  code
 ```{python}
 import numpy as np
 import pandas as pd
@@ -538,9 +563,11 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer
 import numpy as np
+# Read the data
 cancer= load_breast_cancer()
 (X_cancer, y_cancer) = load_breast_cancer(return_X_y = True)
 X_train, X_test, y_train, y_test = train_test_split(X_cancer, y_cancer, random_state = 0)
+# Use the DecisionTreClassifier
 clf = DecisionTreeClassifier(max_depth = 4, min_samples_leaf = 8,
                             random_state = 0).fit(X_train, y_train)
 
@@ -551,6 +578,7 @@ print('Accuracy of DT classifier on training set: {:.2f}'
 print('Accuracy of DT classifier on test set: {:.2f}'
      .format(clf.score(X_test, y_test)))
 
+# Plot the feature importances
 fig4=plt.figure(figsize=(10,6),dpi=80)
 
 fig4=plt.barh(range(c_features), clf.feature_importances_)
@@ -566,7 +594,8 @@ plt.savefig('fig4.png', bbox_inches='tight')
 Output image:
 ![output](fig4.png)
 
-#Precision recall curve and AUC - R
+## 1.10a Precision-Recall, ROC curves & AUC- R code
+I tried several R packages for plotting the Precision and Recall and AUC curve. PRROC seems to work well. The Precision-Recall curves show the tradeoff between precision and recall. The higher the precision, the lower the recall and vice versa.AUC curves that hug the top left corner indicate a high sensitivity,specificity and an excellent accuracy. 
 ```{r}
 source("RFunctions-1.R")
 library(dplyr)
@@ -584,26 +613,35 @@ train_idx <- trainTestSplit(digits,trainPercent=75,seed=5)
 train <- digits[train_idx, ]
 test <- digits[-train_idx, ]
 
+# Fit a SVM model with linear basis kernel with probabilities
 svmfit=svm(X64~., data=train, kernel="linear",scale=FALSE,probability=TRUE)
 ypred=predict(svmfit,test,probability=TRUE)
 head(attr(ypred,"probabilities"))
 
+# Store the probability of 0s and 1s
 m0<-attr(ypred,"probabilities")[,1]
 m1<-attr(ypred,"probabilities")[,2]
 
+# Create a dataframe of scores
 scores <- data.frame(m1,test$X64)
+
+# Class 0 is data points of +ve class (in this case, digit 1) and -ve class (digit 0)
+#Compute Precision Recall
 pr <- pr.curve(scores.class0=scores[scores$test.X64=="1",]$m1,
                scores.class1=scores[scores$test.X64=="0",]$m1,
                curve=T)
 
+# Plot precision-recall curve
 plot(pr)
 
+#Plot the ROC curve
 roc<-roc.curve(m0, m1,curve=TRUE)
 plot(roc)
 ```
 
 
-# Precision _recall - Python
+## 1.10b Precision-Recall, ROC curves & AUC- Python code
+For Python Logistic Regression is used to plot Precision Recall, ROC curve and compute AUC
 ```{python}
 import numpy as np
 import pandas as pd
@@ -611,36 +649,33 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import load_digits
+from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import roc_curve, auc
+#Load the digits
 dataset = load_digits()
 X, y = dataset.data, dataset.target
+#Create 2 classes -i) Digit 1 (from digit 1) ii) Digit 0 (from all other digits)
 # Make a copy of the target
 z= y.copy()
 # Replace all non 1's as 0
 z[z != 1] = 0
 
 X_train, X_test, y_train, y_test = train_test_split(X, z, random_state=0)
-
+# Fit a LR model
 lr = LogisticRegression().fit(X_train, y_train)
 
+#Compute the decision scores
 y_scores_lr = lr.fit(X_train, y_train).decision_function(X_test)
 y_score_list = list(zip(y_test[0:20], y_scores_lr[0:20]))
 
-# show the decision_function scores for first 20 instances
+#Show the decision_function scores for first 20 instances
 y_score_list
-
-y_proba_lr = lr.fit(X_train, y_train).predict_proba(X_test)
-y_proba_list = list(zip(y_test[0:20], y_proba_lr[0:20,1]))
-
-# show the probability of positive class for first 20 instances
-y_proba_list
-
-from sklearn.metrics import precision_recall_curve
 
 precision, recall, thresholds = precision_recall_curve(y_test, y_scores_lr)
 closest_zero = np.argmin(np.abs(thresholds))
 closest_zero_p = precision[closest_zero]
 closest_zero_r = recall[closest_zero]
-#plt.figure(figsize=(15,15),dpi=80)
+#Plot
 plt.figure()
 plt.xlim([0.0, 1.01])
 plt.ylim([0.0, 1.01])
@@ -651,10 +686,7 @@ plt.ylabel('Recall', fontsize=16)
 plt.axes().set_aspect('equal')
 plt.savefig('fig5.png', bbox_inches='tight')
 
-from sklearn.metrics import roc_curve, auc
-
-X_train, X_test, y_train, y_test = train_test_split(X, z, random_state=0)
-
+#Compute and plot the ROC
 y_score_lr = lr.fit(X_train, y_train).decision_function(X_test)
 fpr_lr, tpr_lr, _ = roc_curve(y_test, y_score_lr)
 roc_auc_lr = auc(fpr_lr, tpr_lr)
@@ -678,7 +710,8 @@ plt.savefig('fig6.png', bbox_inches='tight')
 
 ![output](fig6.png)
 
-## Using the LinearSVC for precision recall
+## 1.10c Precision-Recall, ROC curves & AUC- Python code
+In the code below classification probabilities are used to compute and plot precision-recall, roc and AUC
 ```{python}
 import numpy as np
 import pandas as pd
@@ -697,8 +730,6 @@ z[z != 1] = 0
 
 
 X_train, X_test, y_train, y_test = train_test_split(X, z, random_state=0)
-#clf = SVC(probability=True).fit(X_train, y_train)
-#y_proba_lr = clf.predict_proba(X_test)
 svm = LinearSVC()
 # Need to use CalibratedClassifierSVC to redict probabilities for lInearSVC
 clf = CalibratedClassifierCV(svm) 
@@ -723,3 +754,12 @@ plt.savefig('fig7.png', bbox_inches='tight')
 ```
 
 ![output](fig7.png)
+
+##Conclusion
+
+This 4th part looked at SVMs with linear and radial basis, decision trees, precision-recall 
+tradeoff, ROC curves and AUC. 
+
+Comments, suggestions and correction are welcome.
+
+
